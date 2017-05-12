@@ -1,0 +1,94 @@
+
+Module Module1
+
+    Sub Main()
+            DisplayGameOptions()
+            Dim Game As New Game(GetModeChoice)
+    End Sub
+    Sub DisplayGameOptions()
+        Console.WriteLine("Select game mode and press enter:")
+        Console.WriteLine("1 - Player1 vs Player2")
+        Console.WriteLine("2 - Player1 vs CPU")
+        Console.WriteLine("3 - CPU vs CPU")
+    End Sub
+    Function GetModeChoice()
+        Console.WriteLine()
+        Console.WriteLine("Choice:")
+        Return Console.ReadLine
+    End Function
+    Class Game
+        Public Sub New(ByVal GameType As Integer)
+            Select Case GameType
+                Case 1
+                    PlayMode1()
+                Case 2
+                    PlayMode2()
+                Case 3
+                    Playmode3()
+            End Select
+
+
+        End Sub
+        Public Sub PlayMode1()
+            Dim Player1 As New Player(1)
+            Dim Player2 As New Player(2)
+        End Sub
+        Public Sub PlayMode2()
+            Dim Player As New Player(1)
+            Dim CPU As New CPU(2)
+        End Sub
+        Public Sub Playmode3()
+            Dim CPU1 As New CPU(1)
+            Dim CPU2 As New CPU(2)
+        End Sub
+    End Class
+    Class CPU
+        Protected Colour As Char
+        Protected PlayerNo As Integer
+        Public Sub New(PlayerNo As Integer)
+            If PlayerNo = 1 Then
+                Colour = "W"
+            ElseIf PlayerNo = 2 Then
+                Colour = "B"
+            End If
+        End Sub
+    End Class
+    Class Player
+        Inherits CPU
+        Private PlayerName As String
+        Public Sub New(PlayerNo)
+            MyBase.New(PlayerNo:=PlayerNo)
+
+        End Sub
+
+        Public Sub SetPlayerName(PlayerNo As String)
+            Console.WriteLine("What is the name of Player{0} ({1})?", PlayerNo, Colour)
+            PlayerName = Console.ReadLine
+        End Sub
+        Public Function GetPlayerName(ByVal PlayerNo As Integer)
+            Return PlayerName
+        End Function
+    End Class
+
+    Class Board
+        Protected X As Integer = 8
+        Protected Y As Integer = 8
+        Protected Board(X, Y) As Char
+
+        Public Sub InitializeBoard()
+            For a = 1 To X
+                For b = 1 To Y
+                    Board(a, b) = ""
+                Next
+            Next
+        End Sub
+    End Class
+    
+    Class White
+        Inherits Board
+
+    End Class
+    Class Black
+        Inherits Board
+    End Class
+End Module
