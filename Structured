@@ -1,0 +1,124 @@
+Module Module1
+    Const WhitePawn As Char = "W"
+    Const BlackPawn As Char = "B"
+    Const NoPiece As Char = " "
+    Dim PlayerOneName As String
+    Dim PlayerTwoName As String
+    Dim Board(8, 8) As Char
+    Dim Turn As Integer = 1
+    'finish the GameWon function
+    Sub Main()
+        GetPlayerNames()
+        InitializeBoard()
+        Do Until GameWon() = "WhiteWin" Or GameWon() = "BlackWin"
+            DisplayBoard()
+            If Turn Mod 2 = 1 Then
+                WhiteTurn()
+            Else
+                BlackTurn()
+            End If
+            Turn = Turn + 1
+
+        Loop
+        If GameWon() = "WhiteWin" Then
+            Console.WriteLine(PlayerOneName & " wins!")
+        ElseIf GameWon() = "BlackWin" Then
+            Console.WriteLine(PlayerTwoName & " wins!")
+        End If
+        Console.ReadLine()
+    End Sub
+    Sub GetPlayerNames()
+        Console.WriteLine("Enter Player1(white) name")
+        PlayerOneName = Console.ReadLine
+        Console.WriteLine("Enter Player2(black) name")
+        PlayerTwoName = Console.ReadLine
+    End Sub
+    Sub InitializeBoard()
+        For a = 1 To 8
+            For b = 1 To 8
+                If b = 2 Then
+                    Board(a, b) = WhitePawn
+                ElseIf b = 7 Then
+                    Board(a, b) = BlackPawn
+                Else
+                    Board(a, b) = NoPiece
+                End If
+            Next
+        Next
+    End Sub
+    Sub DisplayBoard()
+        If Turn Mod 2 = 1 Then
+            Console.BackgroundColor = ConsoleColor.White
+            Console.ForegroundColor = ConsoleColor.Black
+        Else
+            Console.BackgroundColor = ConsoleColor.Black
+            Console.ForegroundColor = ConsoleColor.White
+        End If
+        For y = 8 To 0 Step -1
+            For x = 0 To 8
+                If x = 0 And y <> 0 Then
+                    Console.Write(y)
+                ElseIf y = 0 And x <> 0 Then
+                    Console.Write(Chr(x + 96))
+                ElseIf y = 0 And x = 0 Then
+                    Console.Write(" ")
+                Else
+                    Console.Write(Board(x, y))
+                End If
+                Console.Write("|")
+            Next
+            Console.WriteLine()
+        Next
+        Console.ResetColor()
+    End Sub
+    Sub WhiteTurn()
+        Dim SelectedPieceX, SelectedPieceY, SelectedMoveX, SelectedMoveY As Integer
+        Dim UserInput As String
+        Console.WriteLine("Select the piece you are moving, the coordinate you are moving it to and then hit enter(e.g. 'b2 b3')")
+        UserInput = Console.ReadLine
+        SelectedPieceX = Asc(Mid(UserInput, 1, 1)) - 96
+        SelectedPieceY = Mid(UserInput, 2, 1)
+        SelectedMoveX = Asc(Mid(UserInput, 4, 1)) - 96
+        SelectedMoveY = Mid(UserInput, 5, 1)
+
+        'if ValidWhiteMove() = true
+        Board(SelectedMoveX, SelectedMoveY) = WhitePawn
+        Board(SelectedPieceX, SelectedPieceY) = NoPiece
+
+    End Sub
+    Sub BlackTurn()
+        Dim SelectedPieceX, SelectedPieceY, SelectedMoveX, SelectedMoveY As Integer
+        Dim UserInput As String
+        Console.WriteLine("Select the piece you are moving, the coordinate you are moving it to and then hit enter(e.g. 'b2 b3')")
+        UserInput = Console.ReadLine
+        SelectedPieceX = Asc(Mid(UserInput, 1, 1)) - 96
+        SelectedPieceY = Mid(UserInput, 2, 1)
+        SelectedMoveX = Asc(Mid(UserInput, 4, 1)) - 96
+        SelectedMoveY = Mid(UserInput, 5, 1)
+
+        'if ValidWhiteMove() = true
+        Board(SelectedMoveX, SelectedMoveY) = BlackPawn
+        Board(SelectedPieceX, SelectedPieceY) = NoPiece
+    End Sub
+    Function GetValidCoordinates()
+
+    End Function
+    Function ValidWhiteMove()
+
+    End Function
+    Function ValidBlackMove()
+
+    End Function
+    Function GameWon()
+        Dim Win As String
+        For a = 1 To 8
+            If Board(a, 8) = WhitePawn Then
+                Win = "WhiteWin"
+            ElseIf Board(a, 1) = BlackPawn Then
+                Win = "BlackWin"
+            Else
+            End If
+        Next
+        Return Win
+    End Function
+End Module
