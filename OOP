@@ -2,8 +2,8 @@
 Module Module1
 
     Sub Main()
-            DisplayGameOptions()
-            Dim Game As New Game(GetModeChoice)
+        DisplayGameOptions()
+        Dim Game As New Game(GetModeChoice)
     End Sub
     Sub DisplayGameOptions()
         Console.WriteLine("Select game mode and press enter:")
@@ -17,6 +17,7 @@ Module Module1
         Return Console.ReadLine
     End Function
     Class Game
+        Inherits Board
         Public Sub New(ByVal GameType As Integer)
             Select Case GameType
                 Case 1
@@ -29,9 +30,14 @@ Module Module1
 
 
         End Sub
+        Public Sub SetUpBoard()
+            InitializeBoard()
+
+        End Sub
         Public Sub PlayMode1()
             Dim Player1 As New Player(1)
             Dim Player2 As New Player(2)
+
         End Sub
         Public Sub PlayMode2()
             Dim Player As New Player(1)
@@ -71,6 +77,7 @@ Module Module1
     End Class
 
     Class Board
+        Private Pawn As Char
         Protected X As Integer = 8
         Protected Y As Integer = 8
         Protected Board(X, Y) As Char
@@ -82,13 +89,52 @@ Module Module1
                 Next
             Next
         End Sub
+        Public Function GetAndSetPawn(Colour)
+            Pawn = Colour
+            Return Pawn
+        End Function
+        Public Sub DisplayBoard()
+            For J = Y To 0 Step -1
+                For I = 0 To X
+                    If I = 0 And J <> 0 Then
+                        Console.Write(J)
+                    ElseIf J = 0 And I <> 0 Then
+                        Console.Write(Chr(I + 96))
+                    ElseIf I = 0 And J = 0 Then
+                        Console.Write(" ")
+                    Else
+                        Console.Write(Board(I, J))
+                    End If
+                    Console.Write("|")
+                Next
+                Console.WriteLine()
+            Next
+        End Sub
     End Class
     
     Class White
         Inherits Board
+        Private WhitePawn As Char = "W"
+        Public Function SetWhite()
+            Return GetAndSetPawn(WhitePawn)
+        End Function
 
+        Public Sub InitializeWhite()
+            For a = 1 To X
+                Board(X, 7) = SetWhite()
+            Next
+        End Sub
     End Class
     Class Black
         Inherits Board
+        Private BlackPawn As Char = "B"
+        Public Function SetBlack()
+            Return GetAndSetPawn(BlackPawn)
+        End Function
+        Public Sub InitializeBlack()
+            For a = 1 To X
+                Board(X, 2) = SetBlack()
+            Next
+        End Sub
     End Class
 End Module
