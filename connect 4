@@ -1,0 +1,526 @@
+Imports System
+
+Module Module1
+    Sub Main()
+        'validations missing
+        'do minimax
+        'do neural network
+        Dim Width, Height, WinCondition As Integer
+        Select Case SelectMode()
+            Case 1
+                PlayConnectN(7, 6, 4, "Human", "Human", 3)
+            Case 2
+                CustomizeGame(Width, Height, WinCondition)
+                PlayConnectN(Width, Height, WinCondition, "Human", "Human", 3)
+            Case 3
+                PlayConnectN(7, 6, 4, "Human", "MiniMax", 3)
+        End Select
+    End Sub
+    Function SelectMode()
+        Dim Choice As Integer
+        Do Until Choice > 0 And Choice < 4
+            Console.WriteLine("Select:")
+            Console.WriteLine("1 for Connect4 7x6 (standard) Player vs Player")
+            Console.WriteLine("2 for ConnectN Custom board size Player vs Player")
+            Console.WriteLine("3 for Connect4 7x6 (standard) Player vs MiniMax Depth 3")
+            Try
+                Choice = Console.ReadLine
+            Catch ex As Exception
+                Console.WriteLine("Please enter a value!")
+            End Try
+            If Choice < 1 Or Choice > 3 Then
+                Console.WriteLine("No such option!")
+            End If
+        Loop
+        Console.Clear()
+        Return Choice
+    End Function
+    Sub CustomizeGame(ByRef Width As Integer, ByRef Height As Integer, ByRef WinCondition As Integer)
+        Console.WriteLine("Input board width(max 9):")
+        Width = Console.ReadLine
+        Console.WriteLine("Input board height(max 9):")
+        Height = Console.ReadLine
+        Console.WriteLine("Input win condition:")
+        Console.WriteLine("(the number of counters/marks required in a row to win the game,")
+        Console.WriteLine("must be equal to or less than board width and height, and more than 2)")
+        WinCondition = Console.ReadLine
+    End Sub
+    Sub PlayConnectN(ByVal BoardWidth As Integer, ByVal BoardHeight As Integer,
+                     ByVal WinCondition As Integer, ByVal PlayerOneType As String,
+                     ByVal PlayerTwoType As String, ByVal Depth As Integer)
+        Dim ConnectN As New Game
+        Dim MoveValid As Boolean = True
+        'Instantiating as player, minimax algorithm or neural network AI
+        Dim Player1 As New Player
+        Dim Player2 As New Player
+        Dim Answer As Integer
+        If PlayerOneType = "Human" Then
+            Console.WriteLine("What is the name of Player 1?")
+            Player1.SetName(Console.ReadLine)
+        ElseIf PlayerOneType = "MiniMax" Then
+            Player1 = New MiniMax
+            Player1.SetName(PlayerOneType & "P1")
+        ElseIf PlayerOneType = "NeuralNetWork" Then
+            Player1 = New NeuralNetwork
+            Player1.SetName(PlayerOneType & "P1")
+        End If
+        If PlayerTwoType = "Human" Then
+            Console.WriteLine("What is the name of Player 2?")
+            Player2.SetName(Console.ReadLine)
+        ElseIf PlayerTwoType = "MiniMax" Then
+            Player2 = New MiniMax
+            Player2.SetName(PlayerTwoType & "P2")
+        ElseIf PlayerTwoType = "NeuralNetWork" Then
+            Player2 = New NeuralNetwork
+            Player2.SetName(PlayerTwoType & "P2")
+        End If
+        'Setting Board and win condition
+        ConnectN.SetBoardWidth(BoardWidth)
+        ConnectN.SetBoardHeight(BoardHeight)
+        ConnectN.SetPOneMarkerConnectN()
+        ConnectN.SetPTwoMarkerConnectN()
+        ConnectN.SetWinCondition(WinCondition)
+        Do
+            ConnectN.InitializeBoard()
+            ConnectN.NewGame()
+            If ConnectN.GetGameNumber Mod 2 = 1 Then
+                Player1.SetColourRed()
+                Player2.SetColourYellow()
+            Else
+                Player1.SetColourYellow()
+                Player2.SetColourRed()
+            End If
+            ConnectN.DisplayBoard()
+            Do
+                Console.WriteLine()
+                If ConnectN.GetRedTurn = True And Player1.GetColour = "Red" Or
+                    ConnectN.GetRedTurn = False And Player1.GetColour = "Yellow" Then
+                    Console.WriteLine("Current Turn: " & Player1.GetName & " (" & Player1.GetColour & ")")
+                    ConnectN.PlaceCounter(Player1.XInput(ConnectN.GetHeight, ConnectN.GetWidth,
+                                                         ConnectN.GetCollumnHeight, ConnectN.GetBoard,,
+                                                         WinCondition, Depth))
+                Else
+                    Console.WriteLine("Current Turn: " & Player2.GetName & " (" & Player2.GetColour & ")")
+                    ConnectN.PlaceCounter(Player2.XInput(ConnectN.GetHeight, ConnectN.GetWidth,
+                                                         ConnectN.GetCollumnHeight, ConnectN.GetBoard,,
+                                                         WinCondition, Depth))
+                End If
+                ConnectN.ChangeTurn()
+                ConnectN.DisplayBoard()
+            Loop Until ConnectN.CheckIfGameWon(ConnectN.GetBoard) = True Or
+                ConnectN.GetGameLength = ConnectN.GetHeight * ConnectN.GetWidth
+            If ConnectN.CheckIfGameWon(ConnectN.GetBoard) = False Then
+                Console.WriteLine("A draw!")
+            ElseIf ConnectN.GetRedTurn = True And Player1.GetColour = "Red" _
+                Or ConnectN.GetRedTurn = False And Player1.GetColour = "Yellow" Then
+                Console.WriteLine(Player2.GetName & " wins!")
+                Player2.GameWon()
+            Else
+                Console.WriteLine(Player1.GetName & " wins!")
+                Player1.GameWon()
+            End If
+            Console.WriteLine("Scores:")
+            Console.WriteLine(Player1.GetName & " - " & Player1.GetScore)
+            Console.WriteLine(Player2.GetName & " - " & Player2.GetScore)
+            Console.WriteLine()
+            Console.WriteLine("Input 1 for another game, 0 to exit")
+            Answer = Console.ReadLine
+        Loop Until Answer = 0
+    End Sub
+    Class Player
+        Private PlayerName As String
+        Protected Colour As String
+        Private Score As Integer = 0
+        Public Sub GameWon()
+            Score += 1
+        End Sub
+        Public Sub SetColourRed()
+            Colour = "Red"
+        End Sub
+        Public Sub SetColourYellow()
+            Colour = "Yellow"
+        End Sub
+        Public Sub SetName(Name)
+            PlayerName = Name
+        End Sub
+        Public Function GetColour()
+            Return Colour
+        End Function
+        Public Function GetScore()
+            Return Score
+        End Function
+        Public Function GetName()
+            Return PlayerName
+        End Function
+        Public Overridable Function XInput(ByVal BoardHeight As Integer, ByVal BoardWidth As Integer,
+                                           ByVal CollumnHeight() As Integer, ByVal Board(,) As Char,
+                                           Optional ByVal RedTurn As Boolean = True,
+                                           Optional ByVal WinCondition As Integer = 4,
+                                           Optional ByVal Depth As Integer = 3)
+            Dim Valid As Boolean
+            Do
+                Console.WriteLine("Input X Value:")
+                XInput = Console.ReadLine
+                Try
+                    If XInput < 1 Or XInput > BoardWidth Then
+                        Valid = False
+                        Console.WriteLine("Invalid input - not located within the board!")
+                    ElseIf CollumnHeight(XInput) >= BoardHeight Then
+                        Valid = False
+                        Console.WriteLine("Invalid input, please choose a different collumn.")
+
+                    Else
+                        Valid = True
+                    End If
+                Catch ex As Exception
+                    Valid = False
+                    Console.WriteLine("Please enter a value!")
+                End Try
+            Loop Until Valid
+            Return XInput
+        End Function
+        Public Overridable Function YInput(ByVal BoardHeight As Integer, ByVal BoardWidth As Integer)
+            'for naughts and crosses
+            'Overlap not validated, as requires both x and y
+            'Validate for overlaps outside
+            Dim Valid As Boolean
+            Do
+                Console.WriteLine("Input Y Value:")
+                YInput = Console.ReadLine
+                Try
+                    If YInput < 1 Or YInput > BoardHeight Then
+                        Valid = False
+                        Console.WriteLine("Invalid input - not located within the board!")
+                    Else
+                        Valid = True
+                    End If
+                Catch ex As Exception
+                    Valid = False
+                    Console.WriteLine("Please enter a value!")
+                End Try
+            Loop Until Valid
+            Return YInput
+        End Function
+
+    End Class
+    Class MiniMax
+        Inherits Player
+        Public Overrides Function XInput(ByVal BoardHeight As Integer, ByVal BoardWidth As Integer,
+                                         ByVal CollumnHeight() As Integer,
+                                         ByVal VirtualBoard(,) As Char, Optional ByVal RedTurn As Boolean = True,
+                                         Optional ByVal WinCondition As Integer = 4,
+                                         Optional ByVal Depth As Integer = 3) As Object
+            Dim Max As Integer = Integer.MinValue
+            Dim CurrentBestMove As Integer
+            Dim VirtualVirtualBoard(BoardWidth, BoardHeight) As Char
+            For i = 1 To BoardWidth
+                Try
+                    VirtualVirtualBoard = VirtualPlay(VirtualBoard, Colour, i, CollumnHeight)
+                Catch ex As Exception
+
+                End Try
+                If MiniMax(VirtualVirtualBoard, Depth, i, BoardHeight, WinCondition,
+                           BoardWidth, Colour, CollumnHeight) > Max Then
+                    Max = MiniMax(VirtualVirtualBoard, Depth, i, BoardHeight, WinCondition,
+                           BoardWidth, Colour, CollumnHeight)
+                    CurrentBestMove = i
+                End If
+            Next
+            Return CurrentBestMove
+
+        End Function
+        Public Function MiniMax(ByVal VirtualBoard(,) As Char, ByVal Depth As Integer,
+                                ByVal Node As Integer, ByVal BoardHeight As Integer, ByVal WinCondition As Integer,
+                                ByVal BoardWidth As Integer, ByVal Colour As String, ByVal CollumnHeight() As Integer)
+            'The minimizing step is substiduted for a maximize step for the opponent
+            Dim Max As Integer = Integer.MinValue
+            If Depth = 0 Or Terminal(Node, VirtualBoard, BoardHeight) Then
+                Return Heuristic(VirtualBoard, WinCondition, BoardWidth, BoardHeight, Colour)
+            End If
+            If Colour = "Red" Then
+                For i = 1 To BoardWidth
+                    Try
+                        Max = Math.Max(MiniMax(VirtualPlay(VirtualBoard, Colour, Node, CollumnHeight),
+                                                Depth - 1, i, BoardHeight, WinCondition,
+                                               BoardWidth, "Yellow", CollumnHeight), Max)
+                    Catch ex As Exception
+                    End Try
+                Next
+            Else
+                For i = 1 To BoardWidth
+                    Try
+                        Max = Math.Max(MiniMax(VirtualPlay(VirtualBoard, Colour, Node, CollumnHeight),
+                                                Depth - 1, i, BoardHeight, WinCondition,
+                                               BoardWidth, "Red", CollumnHeight), Max)
+                    Catch ex As Exception
+                    End Try
+                Next
+            End If
+            Return Max
+        End Function
+        Public Function VirtualPlay(ByVal VirtualBoard(,) As Char, ByVal Colour As String, ByVal Node As Integer,
+                                    ByVal CollumnHeight() As Integer)
+            CollumnHeight(Node) += 1
+            If Colour = "Red" Then
+                Try
+                    VirtualBoard(Node, CollumnHeight(Node)) = "R"
+                Catch ex As Exception
+                    Return vbNull
+                End Try
+            Else
+                Try
+                    VirtualBoard(Node, CollumnHeight(Node)) = "Y"
+                Catch ex As Exception
+                    Return vbNull
+                End Try
+            End If
+            Return VirtualBoard
+        End Function
+        Public Function Heuristic(ByVal VirtualBoard(,) As Char, ByVal WinCondition As Integer, ByVal BoardWidth As Integer,
+                                  ByVal BoardHeight As Integer, ByVal Colour As String)
+            Dim Score As Integer = 0
+            Dim MinColour As Char
+            Dim PlayerPiecesInARow(WinCondition)
+            Dim MinPiecesInARow(WinCondition)
+            If Colour = "Red" Then
+                MinColour = "Y"
+            Else
+                MinColour = "R"
+            End If
+            If CheckN(VirtualBoard, BoardWidth, BoardHeight, WinCondition, Colour) > 0 Then
+                Return 100000
+            ElseIf CheckN(VirtualBoard, BoardWidth, BoardHeight, WinCondition, MinColour) > 0 Then
+                Return -100000
+            End If
+            For a = 2 To WinCondition - 1
+                Score += a ^ 2 * CheckN(VirtualBoard, BoardWidth, BoardHeight, a, Colour)
+            Next
+            For b = 2 To WinCondition - 1
+                Score -= b ^ 2 * CheckN(VirtualBoard, BoardWidth, BoardHeight, b, MinColour)
+            Next
+            Return Score
+        End Function
+        Public Function CheckN(ByVal VirtualBoard(,) As Char, ByVal BoardWidth As Integer,
+                                       ByVal BoardHeight As Integer, ByVal N As Integer,
+                               ByVal TurnColour As Char)
+            Dim NConsecutive As Boolean = False
+            Dim Match As Boolean
+            For a = 1 To BoardWidth
+                For b = 1 To BoardHeight
+                    'checks horizontally to the right
+                    If a <= (BoardWidth - N) + 1 Then
+                        Match = True
+                        For c = 1 To N - 1
+                            If VirtualBoard(a + c, b) <> VirtualBoard(a, b) Or VirtualBoard(a, b) = " " Or VirtualBoard(a, b) <> TurnColour Then
+                                Match = False
+                            End If
+                        Next
+                        If Match = True Then NConsecutive += 1
+                    End If
+                    'checks vertically downwards
+                    If b <= (BoardHeight - N) + 1 Then
+                        Match = True
+                        For d = 1 To N - 1
+                            If VirtualBoard(a, b + d) <> VirtualBoard(a, b) Or VirtualBoard(a, b) = " " Or VirtualBoard(a, b) <> TurnColour Then
+                                Match = False
+                            End If
+                        Next
+                        If Match = True Then NConsecutive += 1
+                    End If
+                    'diagonal check 1 bottom left to top right
+                    If a <= (BoardWidth - N) + 1 And
+                            b <= (BoardHeight - N) + 1 Then
+                        Match = True
+                        For e = 1 To N - 1
+                            If VirtualBoard(a + e, b + e) <> VirtualBoard(a, b) Or VirtualBoard(a, b) = " " Or VirtualBoard(a, b) <> TurnColour Then
+                                Match = False
+                            End If
+                        Next
+                        If Match = True Then NConsecutive += 1
+                    End If
+                    'diagonal check 2 top left to bottom right
+                    If a >= N And b <= (BoardHeight - N) + 1 Then
+                        Match = True
+                        For f = 1 To N - 1
+                            If VirtualBoard(a - f, b + f) <> VirtualBoard(a, b) Or VirtualBoard(a, b) = " " Or VirtualBoard(a, b) <> TurnColour Then
+                                Match = False
+                            End If
+                        Next
+                        If Match = True Then NConsecutive += 1
+                    End If
+                Next
+            Next
+
+            Return NConsecutive
+        End Function
+        Public Sub GetAvailableSpaces(ByRef SpacesAvailable() As Integer, ByVal CollumnHeight() As Integer,
+                                      ByVal BoardHeight As Integer, ByVal BoardWidth As Integer)
+            For a = 1 To BoardWidth
+                SpacesAvailable(a) = BoardHeight - CollumnHeight(a)
+            Next
+        End Sub
+        Public Function Terminal(ByVal Node As Integer, VirtualBoard(,) As Char, ByVal BoardHeight As Integer)
+            If VirtualBoard(Node, BoardHeight) <> " " Then
+                Return True
+            Else
+                Return False
+            End If
+        End Function
+    End Class
+    Class NeuralNetwork
+        Inherits Player
+    End Class
+    Class Game
+        Private MaximumSize As Integer = 9
+        Private BoardWidth As Integer
+        Private BoardHeight As Integer
+        Private WinCondition As Integer
+        Private Board(MaximumSize, MaximumSize) As Char
+        Private CollumnHeight(MaximumSize) As Integer 'to record the number of counters in a collumn
+        Private PlayerOneMarker As Char
+        Private PlayerTwoMarker As Char
+        Private RedTurn As Boolean = True
+        Private GameLength As Integer
+        Private GameNumber As Integer = 0
+        Public Sub SetBoardWidth(ByVal Width As Integer)
+            BoardWidth = Width
+        End Sub
+        Public Sub SetBoardHeight(ByVal Height As Integer)
+            BoardHeight = Height
+        End Sub
+        Public Sub SetPOneMarkerConnectN()
+            PlayerOneMarker = "R"
+        End Sub
+        Public Sub SetPTwoMarkerConnectN()
+            PlayerTwoMarker = "Y"
+        End Sub
+        Public Sub SetWinCondition(ByVal ConsecutiveMarkersRequired As Integer)
+            'add  validation outside using GetWinCondition for custom win condition
+            WinCondition = ConsecutiveMarkersRequired
+        End Sub
+        Public Sub NewGame()
+            GameNumber += 1
+        End Sub
+        Public Function GetWinCondition()
+            Return WinCondition
+        End Function
+
+        Public Function GetWidth()
+            Return BoardWidth
+        End Function
+        Public Function GetHeight()
+            Return BoardHeight
+        End Function
+        Public Function GetCollumnHeight()
+            Return CollumnHeight
+        End Function
+        Public Function GetBoard()
+            Return Board
+        End Function
+        Public Function GetRedTurn()
+            Return RedTurn
+        End Function
+        Public Function GetGameLength()
+            Return GameLength
+        End Function
+        Public Function GetGameNumber()
+            Return GameNumber
+        End Function
+        Public Sub InitializeBoard()
+            For X = 1 To BoardWidth
+                For Y = 1 To BoardHeight
+                    Board(X, Y) = " "
+                Next
+                CollumnHeight(X) = 0
+            Next
+            GameLength = 0
+            RedTurn = True
+        End Sub
+        Public Sub PlaceCounter(ByVal XCoordinate As Integer)
+            'This procedure will not change the board if Invalid coordinate - validation required outside
+            CollumnHeight(XCoordinate) += 1
+            If RedTurn Then
+                Board(XCoordinate, CollumnHeight(XCoordinate)) = PlayerOneMarker
+            Else
+                Board(XCoordinate, CollumnHeight(XCoordinate)) = PlayerTwoMarker
+            End If
+
+        End Sub
+        Public Sub ChangeTurn()
+            If RedTurn Then
+                RedTurn = False
+            Else
+                RedTurn = True
+            End If
+            GameLength += 1
+        End Sub
+        Public Function CheckIfGameWon(ByVal Board(,) As Char)
+            'using a parameter for board for minimax to use multiple boards for simulation
+            'Made to work with any boardsize and any number of consecutive counters/marks required to win
+            'This means that it can be used for scoring a boardstate for the minimax algorithm by
+            'checking for say 2 or 3 in a row.
+            Dim GameWon As Boolean = False
+            Dim Match As Boolean
+            For a = 1 To BoardWidth
+                For b = 1 To BoardHeight
+                    'checks if the game is won horizontally to the right
+                    If a <= (BoardWidth - WinCondition) + 1 Then
+                        Match = True
+                        For c = 1 To WinCondition - 1
+                            If Board(a + c, b) <> Board(a, b) Or Board(a, b) = " " Then
+                                Match = False
+                            End If
+                        Next
+                        If Match = True Then GameWon = True
+                    End If
+                    'checks if the game is won vertically downwards
+                    If b <= (BoardHeight - WinCondition) + 1 Then
+                        Match = True
+                        For d = 1 To WinCondition - 1
+                            If Board(a, b + d) <> Board(a, b) Or Board(a, b) = " " Then
+                                Match = False
+                            End If
+                        Next
+                        If Match = True Then GameWon = True
+                    End If
+                    'diagonal check 1 bottom left to top right
+                    If a <= (BoardWidth - WinCondition) + 1 And
+                            b <= (BoardHeight - WinCondition) + 1 Then
+                        Match = True
+                        For e = 1 To WinCondition - 1
+                            If Board(a + e, b + e) <> Board(a, b) Or Board(a, b) = " " Then
+                                Match = False
+                            End If
+                        Next
+                        If Match = True Then GameWon = True
+                    End If
+                    'diagonal check 2 top left to bottom right
+                    If a >= WinCondition And b <= (BoardHeight - WinCondition) + 1 Then
+                        Match = True
+                        For f = 1 To WinCondition - 1
+                            If Board(a - f, b + f) <> Board(a, b) Or Board(a, b) = " " Then
+                                Match = False
+                            End If
+                        Next
+                        If Match = True Then GameWon = True
+                    End If
+                Next
+            Next
+
+            Return GameWon
+        End Function
+        Public Sub DisplayBoard()
+            For Y = BoardHeight To 1 Step -1
+                Console.Write("|")
+                For X = 1 To BoardWidth
+                    Console.Write(Board(X, Y) & "|")
+                Next
+                Console.WriteLine()
+            Next
+            For a = 1 To BoardWidth
+                Console.Write("|" & a)
+            Next
+            Console.WriteLine("|")
+        End Sub
+    End Class
+End Module
